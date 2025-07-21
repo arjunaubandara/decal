@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imari Decal Order Management Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .progress {
+            height: 25px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        #uploadStatus, #processStatus {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar">
+                <h3 class="h4 mb-4">Imari Decal Order</h3>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action active" data-section="home">Home</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="upload">Order Data Upload</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="transfer">Data Transfer Process</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="master">Master Check</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="integration">Data Integration</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="delivery">Check Delivery Dates</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="addplan">Add to Plan</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="updateplan">Update Plan</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="delivery-ack">Delivery ACK</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="shipped-data">Shipped Data</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="data-adjustment">Data Adjustment</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="reports">Reports</a>
+                    <a href="#" class="list-group-item list-group-item-action" data-section="csv-history">CSV History</a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <!-- Home Section -->
+                <div id="home-section" class="content-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title mb-0">Imari Decal Order Management Tool</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card text-white bg-primary mb-3">
+                                        <div class="card-header">Not Planned Orders</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title" id="not-planned-count">0</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-white bg-warning mb-3">
+                                        <div class="card-header">Pending Delivery ACK</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title" id="pending-ack-count">0</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-white bg-info mb-3">
+                                        <div class="card-header">To Be Shipped</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title" id="to-be-shipped-count">0</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-white bg-success mb-3">
+                                        <div class="card-header">Total Orders</div>
+                                        <div class="card-body">
+                                            <h5 class="card-title" id="total-orders-count">0</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <p class="text-muted">Welcome to the Imari Decal Order Management Tool. Use the sidebar to navigate between different sections.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload Section -->
+                <div id="upload-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Decal Order Data Upload</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="uploadForm" action="order_upload.php" method="post" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="fileUpload" class="form-label">Select CSV File</label>
+                                    <input type="file" class="form-control" id="fileUpload" name="file" accept=".csv">
+                                    <small class="text-muted">CSV file like: Decal_Order.csv</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Upload Order Data</button>
+                            </form>
+                            <div id="uploadStatus"></div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Uploaded Orders Table -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Today's Uploaded Order Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="todayOrdersTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Order No</th>
+                                            <th>Decal Pattern</th>
+                                            <th>Curve No</th>
+                                            <th>Order Quantity</th>
+                                            <th>Delivery Date</th>
+                                            <th>Order Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Transfer Section -->
+                <div id="transfer-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Data Transfer Process</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> This process will transfer Imari order data to Printing System.
+                            </div>
+                            <button id="startTransfer" class="btn btn-primary">Start Data Transfer</button>
+                            <div id="transferStatus" class="mt-3"></div>
+                            
+                            <!-- Transfer Summary -->
+                            <div id="transferSummary" class="mt-4 d-none">
+                                <h6>Transfer Summary</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td>Records Processed:</td>
+                                                <td id="recordsProcessed">0</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Transfer Status:</td>
+                                                <td id="transferResult">-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Last Transfer:</td>
+                                                <td id="lastTransferTime">-</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Master Check Section -->
+                <div id="master-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Master Data Check</h5>
+                        </div>
+                        <div class="card-body" id="masterCheckContent">
+                            <!-- Content loaded from check_mismatches.php -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Integration Section -->
+                <div id="integration-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Data Integration</h5>
+                        </div>
+                        <div class="card-body" id="integrationContent">
+                            <!-- Content loaded from integration.php -->
+                        </div>
+                        <div id="integrationStatus"></div>
+                        <form id="integrationForm" method="POST">
+                            <button type="submit" name="transfer" id="initiateTransfer" 
+                            class="btn btn-primary" >Proceed Data Integration</button>
+                        </form>
+                        
+                    </div>
+                </div>
+
+                <!-- Check Delivery Dates Section -->
+                <div id="delivery-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Check Delivery Dates</h5>
+                        </div>
+                        <div class="card-body">
+                            <?php include 'editable_grid.php'; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add to Plan Section -->
+                <div id="addplan-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Add to Production Plan</h5>
+                        </div>
+                        <div class="card-body">
+                            <button id="startAddToPlan" class="btn btn-primary">Start Add to Plan</button>
+                            <div id="planStatus" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update Plan Section -->
+                <div id="updateplan-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Update Production Plan</h5>
+                        </div>
+                        <div class="card-body">
+                            <button id="startUpdatePlan" class="btn btn-secondary">Start Update Plan</button>
+                            <div id="updatePlanStatus" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery ACK Section -->
+                <div id="delivery-ack-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Delivery Acknowledgment</h5>
+                        </div>
+                        <div class="card-body">
+                            <?php include 'nhq_data.php'; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipped Data Section -->
+                <div id="shipped-data-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Shipped Data</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <button id="saveDateChanges" class="btn btn-primary me-2">Save Date Changes</button>
+                                    <button id="generateShippedDataCSV" class="btn btn-success">Generate Shipped Data CSV</button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="shippedDataTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Order No</th>
+                                            <th>Pattern</th>
+                                            <th>Curve</th>
+                                            <th>Planned Delivery</th>
+                                            <th>Lot No</th>
+                                            <th>Order Qty</th>
+                                            <th>Shipped Qty</th>
+                                            <th>This Time Ship Qty</th>
+                                            <th>Shipped</th>
+                                            <th>Save</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CSV History Section -->
+                <div id="csv-history-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">CSV Upload History</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table id="csvHistoryTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Upload Date</th>
+                                            <th>File Name</th>
+                                            <th>Records Added</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Adjustment Section -->
+                <div id="data-adjustment-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Data Adjustment</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <button id="saveAdjustmentData" class="btn btn-success">Save Data</button>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="adjustmentDataTable" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Save</th>
+                                            <th>Order No</th>
+                                            <th>Pattern</th>
+                                            <th>Curve</th>
+                                            <th>Planned Delivery</th>
+                                            <th>Lot No</th>
+                                            <th>Order Qty</th>
+                                            <th>Shipped Qty</th>
+                                            <th>This Time Ship Qty</th>
+                                            <th>Adjust</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reports-section" class="content-section d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-tabs" id="reportsTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="not-planned-tab" data-bs-toggle="tab" data-bs-target="#not-planned" type="button" role="tab">Not Planned</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="pending-ack-tab" data-bs-toggle="tab" data-bs-target="#pending-ack" type="button" role="tab">Pending Delivery ACK</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="to-be-shipped-tab" data-bs-toggle="tab" data-bs-target="#to-be-shipped" type="button" role="tab">To Be Shipped</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content mt-3" id="reportsTabContent">
+                                <div class="tab-pane fade show active" id="not-planned" role="tabpanel">
+                                    <table id="notPlannedTable" class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Order No</th>
+                                                <th>Decal Patt</th>
+                                                <th>Curve No</th>
+                                                <th>Order Quantity</th>
+                                                <th>Order Date</th>
+                                                <th>Delivery Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="tab-pane fade" id="pending-ack" role="tabpanel">
+                                    <table id="pendingAckTable" class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Order No</th>
+                                                <th>Decal Patt</th>
+                                                <th>Curve No</th>
+                                                <th>Order Quantity</th>
+                                                <th>Order Date</th>
+                                                <th>Delivery Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="tab-pane fade" id="to-be-shipped" role="tabpanel">
+                                    <table id="toBeShippedTable" class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Order No</th>
+                                                <th>Decal Patt</th>
+                                                <th>Curve No</th>
+                                                <th>Order Quantity</th>
+                                                <th>Order Date</th>
+                                                <th>Planned Delivery</th>
+                                                <th>Lot No</th>
+                                                <th>Shipped So Far</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Section Navigation
+            $('.list-group-item').click(function() {
+                // Get the target section
+                var targetSection = $(this).data('section');
+                
+                // Hide all content sections
+                $('.content-section').addClass('d-none');
+                
+                // Show target section
+                $('#' + targetSection + '-section').removeClass('d-none');
+                
+                // Update active sidebar item
+                $('.list-group-item').removeClass('active');
+                $(this).addClass('active');
+                
+                // Load section-specific data if needed
+                switch(targetSection) {
+                    case 'home':
+                        loadHomeSummary();
+                        break;
+                    case 'shipped-data':
+                        loadShippedData();
+                        break;
+                    case 'data-adjustment':
+                        loadAdjustmentData();
+                        break;
+                    case 'reports':
+                        loadNotPlannedReport();
+                        loadPendingAckReport();
+                        loadToBeShippedReport();
+                        break;
+                    case 'csv-history':
+                        $('#content').load('csv_history.php');
+                        break;
+                    // Add other sections as needed
+                }
+            });
+
+            // Initialize DataTable
+            $('#dataTable').DataTable({
+                ajax: 'load_table_data.php',
+                processing: true,
+                serverSide: true
+            });
+
+            // Initialize DataTable for today's orders
+            const todayOrdersTable = $('#todayOrdersTable').DataTable({
+                processing: true,
+                serverSide: false,
+                order: [[1, 'asc']], // Sort by Order No by default
+            });
+
+            // Modified form submission handler
+            $(document).on('submit', '#uploadForm', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#uploadStatus').html('<div class="alert alert-success">Data uploaded successfully!</div>');
+                        refreshTodayOrders();
+                    },
+                    error: function() {
+                        $('#uploadStatus').html('<div class="alert alert-danger">Upload failed! Please check your CSV format.</div>');
+                    }
+                });
+            });
+
+            function checkMismatchStatus() {
+    fetch('check_mismatches.php')
+        .then(response => response.json())
+        .then(data => {
+            const button = document.getElementById('initiateTransfer');
+            button.disabled = data.hasMismatches;
+        });
+}
+
+            // Add form submission handler for the integration form
+            $(document).on('submit', '#integrationForm', function(e) {
+                e.preventDefault();
+                const statusDiv = $('#integrationStatus');
+                const form = $(this);
+                
+                // Disable the submit button
+                form.find('button[type="submit"]').prop('disabled', true);
+                
+                statusDiv.html('<div class="alert alert-info">Processing integration...</div>');
+                
+                $.ajax({
+                    url: 'integration.php',
+                    type: 'POST',
+                    data: { transfer: true },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Success response:', response);
+                        if (response.status === 'success') {
+                            statusDiv.html('<div class="alert alert-success">' + response.message + '</div>');
+                            setTimeout(() => {
+                                location.reload();
+                            }, 2000);
+                        } else {
+                            statusDiv.html('<div class="alert alert-' + 
+                                (response.status === 'warning' ? 'warning' : 'danger') + 
+                                '">' + response.message + '</div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', {
+                            status: status,
+                            error: error,
+                            response: xhr.responseText,
+                            xhr: xhr
+                        });
+                        
+                        let errorMessage = 'Server error occurred. Please check the error logs.';
+                        
+                        if (xhr.responseText) {
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                errorMessage = response.message || errorMessage;
+                            } catch(e) {
+                                console.error('Parse error:', e);
+                                errorMessage = xhr.responseText || errorMessage;
+                            }
+                        }
+                        
+                        statusDiv.html('<div class="alert alert-danger">' + errorMessage + '</div>');
+                    },
+                    complete: function() {
+                        // Re-enable the submit button
+                        form.find('button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+
+            // Function to refresh today's orders
+            function refreshTodayOrders() {
+                $.ajax({
+                    url: 'get_today_orders.php',
+                    type: 'GET',
+                    success: function(data) {
+                        todayOrdersTable.clear();
+                        data.forEach(function(order) {
+                            todayOrdersTable.row.add([
+                                order.status,
+                                order.order_no,
+                                order.decal_patt,
+                                order.curve_no,
+                                order.order_quantity,
+                                order.delivery_date,
+                                order.order_date
+                            ]);
+                        });
+                        todayOrdersTable.draw();
+                    }
+                });
+            }
+
+            // Initial load of today's orders
+            refreshTodayOrders();
+
+            // Process Data - Data Transfer
+            $('#startTransfer').click(function() {
+                const button = $(this);
+                const statusDiv = $('#transferStatus');
+                const summaryDiv = $('#transferSummary');
+                
+                // Disable button during transfer
+                button.prop('disabled', true);
+                statusDiv.html('<div class="alert alert-info">Transferring data to production server...</div>');
+                
+                $.ajax({
+                    url: 'data_import.php',
+                    type: 'GET',
+                    success: function(response) {
+                        // Update status
+                        if (response.includes("New data imported successfully")) {
+                            statusDiv.html('<div class="alert alert-success">Data transfer completed successfully!</div>');
+                        } else if (response.includes("No new data")) {
+                            statusDiv.html('<div class="alert alert-warning">No new data to transfer.</div>');
+                        } else {
+                            statusDiv.html('<div class="alert alert-danger">Transfer failed. Please check the logs.</div>');
+                        }
+                        
+                        // Show summary
+                        summaryDiv.removeClass('d-none');
+                        $('#lastTransferTime').text(new Date().toLocaleString());
+                        
+                        // Get transfer summary
+                        $.ajax({
+                            url: 'get_transfer_summary.php',
+                            type: 'GET',
+                            success: function(summary) {
+                                $('#recordsProcessed').text(summary.processed || 0);
+                                $('#transferResult').text(summary.status || 'Completed');
+                            }
+                        });
+                    },
+                    error: function() {
+                        statusDiv.html('<div class="alert alert-danger">Transfer failed. Please check server connectivity.</div>');
+                    },
+                    complete: function() {
+                        button.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Master Check
+            function loadMasterCheck() {
+                $('#masterCheckContent').html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+                $.get('check_mismatches.php', function(data) {
+                    $('#masterCheckContent').html(data);
+                });
+            }
+
+            // Data Integration
+            function loadIntegration() {
+                $('#integrationContent').html('<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>');
+                $.get('integration.php', function(data) {
+                    $('#integrationContent').html(data);
+                });
+            }
+
+            // Load Master Check and Data Integration on section change
+            $('.list-group-item').click(function() {
+                const section = $(this).data('section');
+                if (section === 'master') {
+                    loadMasterCheck();
+                } else if (section === 'integration') {
+                    loadIntegration();
+                }
+            });
+
+            // Add to your existing $(document).ready function in index.php
+            $('#startAddToPlan').click(function() {
+                var button = $(this);
+                var statusDiv = $('#planStatus');
+                
+                button.prop('disabled', true);
+                statusDiv.html('<div class="alert alert-info">Processing data transfer to planning system...</div>');
+                
+                $.ajax({
+                    url: 'add_to_plan.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            statusDiv.html(
+                                '<div class="alert alert-success">' + 
+                                response.message + '<br>' +
+                                'Records processed: ' + response.records +
+                                '</div>'
+                            );
+                        } else {
+                            statusDiv.html(
+                                '<div class="alert alert-danger">' +
+                                'Error: ' + response.message +
+                                '</div>'
+                            );
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        statusDiv.html(
+                            '<div class="alert alert-danger">' +
+                            'Transfer failed. Error: ' + error +
+                            '</div>'
+                        );
+                    },
+                    complete: function() {
+                        button.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Handler for Start Update Plan button
+            $('#startUpdatePlan').click(function() {
+                var button = $(this);
+                var statusDiv = $('#updatePlanStatus');
+                button.prop('disabled', true);
+                statusDiv.html('<div class="alert alert-info">Processing update to production plan...</div>');
+                $.ajax({
+                    url: 'update_plan.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status == 'success') {
+                            statusDiv.html('<div class="alert alert-success">' + response.message + '<br>Records updated: ' + (response.records || 0) + '</div>');
+                        } else {
+                            statusDiv.html('<div class="alert alert-danger">Error: ' + response.message + '</div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        statusDiv.html('<div class="alert alert-danger">Update failed. Error: ' + error + '</div>');
+                    },
+                    complete: function() {
+                        button.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Shipped Data Section
+            var selectedShippedRows = {};
+
+            function loadShippedData() {
+                $.ajax({
+                    url: 'load_table_data_ship.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        var shippedDataTable = $('#shippedDataTable').DataTable({
+                            destroy: true,
+                            data: data,
+                            columns: [
+                                // Original columns without the checkbox first
+                                { data: 'order_no' },
+                                { data: 'decal_patt' },
+                                { data: 'curve_no' },
+                                {
+                                    data: 'planned_delivery',
+                                    render: function(data, type, row) {
+                                        return '<input type="text" class="form-control form-control-sm planned-delivery-input" data-id="' + row.id + '" value="' + (data || '') + '">';
+                                    }
+                                },
+                                { data: 'lot_no' },
+                                { data: 'order_quantity' },
+                                { 
+                                    data: 'shippedsofar',
+                                    render: function(data, type, row) {
+                                        return data || 0;
+                                    }
+                                },
+                                { 
+                                    data: null,
+                                    render: function(data, type, row) {
+                                        var remainingQty = Math.max(0, row.order_quantity - row.shippedsofar);
+                                        var value = selectedShippedRows[row.id] ? selectedShippedRows[row.id].ship_qty : remainingQty;
+                                        // Add data-* attributes to store values needed for validation
+                                        return '<input type="text" class="form-control this-time-ship-qty" ' + 
+                                               'data-order-qty="' + row.order_quantity + '" ' +
+                                               'data-shipped-so-far="' + (row.shippedsofar || 0) + '" ' +
+                                               'style="min-width:80px;" value="' + value + '">';
+                                    }
+                                },
+                                {
+                                    data: 'shipped',
+                                    render: function(data, type, row) {
+                                        return '<input type="checkbox" class="shipped-checkbox" ' + (data == 1 ? 'checked' : '') + '>';
+                                    }
+                                },
+                                // Moved the checkbox to the last column
+                                {
+                                    data: null,
+                                    render: function(data, type, row) {
+                                        var checked = selectedShippedRows[row.id] ? 'checked' : '';
+                                        return '<input type="checkbox" class="row-checkbox" data-id="' + row.id + '" ' + checked + '>';
+                                    }
+                                }
+                            ],
+                            drawCallback: function(settings) {
+                                // Restore checkbox states after pagination
+                                $('#shippedDataTable .row-checkbox').each(function() {
+                                    var id = $(this).data('id');
+                                    if (selectedShippedRows[id]) {
+                                        $(this).prop('checked', true);
+                                    }
+                                });
+                            }
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading shipped data:', error);
+                        alert('Failed to load shipped data');
+                    }
+                });
+            }
+
+            $(document).on('change', '#shippedDataTable .row-checkbox', function() {
+                var tr = $(this).closest('tr');
+                var id = $(this).data('id');
+                
+                // Updated column index references since we moved the checkbox
+                var thisTimeShipQtyInput = tr.find('.this-time-ship-qty');
+                var currentShippedQty = parseInt(tr.find('td:eq(6)').text(), 10) || 0; // was 7, now 6
+                var thisTimeShipQty = parseInt(thisTimeShipQtyInput.val(), 10);
+                var orderQty = parseInt(tr.find('td:eq(5)').text(), 10);  // was 6, now 5
+                var isShipped = tr.find('.shipped-checkbox').is(':checked') ? 1 : 0;
+                var orderNo = tr.find('td:eq(0)').text();  // was 1, now 0
+                var decalPatt = tr.find('td:eq(1)').text(); // was 2, now 1
+                var curveNo = tr.find('td:eq(2)').text();  // was 3, now 2
+                var plannedDelivery = tr.find('td:eq(3) input').val(); // was 4, now 3
+                var lotNo = tr.find('td:eq(4)').text();  // was 5, now 4
+                
+                if ($(this).is(':checked')) {
+                    selectedShippedRows[id] = {
+                        // Make sure ship_qty is taken directly from the input without validation
+                        ship_qty: thisTimeShipQty,
+                        // Other properties...
+                    };
+                } else {
+                    delete selectedShippedRows[id];
+                }
+            });
+
+            $(document).on('input', '#shippedDataTable .this-time-ship-qty', function() {
+                var tr = $(this).closest('tr');
+                var id = tr.find('.row-checkbox').data('id');
+                if (selectedShippedRows[id]) {
+                    selectedShippedRows[id].ship_qty = parseInt($(this).val(), 10);
+                }
+            });
+
+            // Generate Shipped Data CSV
+            $(document).on('click', '#generateShippedDataCSV', function(e) {
+                e.preventDefault();
+                // Update all selected rows with the latest input value before generating CSV
+                $('#shippedDataTable .row-checkbox:checked').each(function() {
+                    var tr = $(this).closest('tr');
+                    var id = $(this).data('id');
+                    var thisTimeShipQtyInput = tr.find('.this-time-ship-qty');
+                    var currentShippedQty = parseInt(tr.find('td:eq(6)').text(), 10) || 0; // was 7, now 6
+                    var thisTimeShipQty = parseInt(thisTimeShipQtyInput.val(), 10);
+                    var orderQty = parseInt(tr.find('td:eq(5)').text(), 10); // was 6, now 5
+                    var isShipped = tr.find('.shipped-checkbox').is(':checked') ? 1 : 0;
+                    var orderNo = tr.find('td:eq(0)').text(); // was 1, now 0
+                    var decalPatt = tr.find('td:eq(1)').text(); // was 2, now 1
+                    var curveNo = tr.find('td:eq(2)').text(); // was 3, now 2
+                    var plannedDelivery = tr.find('td:eq(3) input').val(); // was 4, now 3
+                    var lotNo = tr.find('td:eq(4)').text(); // was 5, now 4
+                    
+                    selectedShippedRows[id] = {
+                        id: id,
+                        ship_qty: thisTimeShipQty,
+                        current_shipped: currentShippedQty,
+                        order_qty: orderQty,
+                        shipped: isShipped,
+                        order_no: orderNo || (selectedShippedRows[id] && selectedShippedRows[id].order_no) || '',
+                        decal_patt: decalPatt || (selectedShippedRows[id] && selectedShippedRows[id].decal_patt) || '',
+                        curve_no: curveNo || (selectedShippedRows[id] && selectedShippedRows[id].curve_no) || '',
+                        planned_delivery: plannedDelivery || (selectedShippedRows[id] && selectedShippedRows[id].planned_delivery) || '',
+                        lot_no: lotNo || (selectedShippedRows[id] && selectedShippedRows[id].lot_no) || ''
+                    };
+                });
+                
+                var selectedData = Object.values(selectedShippedRows);
+                if (selectedData.length === 0) {
+                    alert('Please select records and enter shipping quantities');
+                    return;
+                }
+                // Step 1: Save data to database
+                $.ajax({
+                    url: 'save_shipped_data.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { data: selectedData },
+                    success: function(response) {
+                        if (response.success) {
+                            // Step 2: Generate CSV only if save succeeds
+                            var csvForm = $('<form>', {
+                                method: 'POST',
+                                action: 'generate_shipped_csv.php',
+                                target: '_blank'
+                            });
+                            $('<input>').attr({
+                                type: 'hidden',
+                                name: 'data',
+                                value: JSON.stringify(selectedData)
+                            }).appendTo(csvForm);
+                            csvForm.appendTo('body').submit();
+                            // Clear selection state and reload table
+                            selectedShippedRows = {};
+                            loadShippedData();
+                        } else {
+                            alert('Error saving shipped data: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Failed to save shipped data: ' + xhr.responseText);
+                    }
+                });
+            });
+
+            // Select all checkbox functionality
+            $(document).on('change', '#selectAllShippedData', function() {
+                $('#shippedDataTable .row-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            // Sidebar navigation for Shipped Data
+            $('.list-group-item[data-section="shipped-data"]').click(function() {
+                // Load shipped data when section is clicked
+                loadShippedData();
+            });
+
+            // Data Adjustment Section
+            function loadAdjustmentData() {
+                $.ajax({
+                    url: 'load_table_data_adjustment.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        var adjustmentDataTable = $('#adjustmentDataTable').DataTable({
+                            destroy: true,
+                            data: data,
+                            columns: [
+                                {
+                                    data: null,
+                                    render: function(data, type, row) {
+                                        return '<input type="checkbox" class="row-checkbox" data-id="' + row.id + '">';
+                                    }
+                                },
+                                { data: 'order_no' },
+                                { data: 'decal_patt' },
+                                { data: 'curve_no' },
+                                {
+                                    data: 'planned_delivery',
+                                    render: function(data, type, row) {
+                                        return '<input type="text" class="form-control form-control-sm planned-delivery-input" data-id="' + row.id + '" value="' + (data || '') + '" readonly>';
+                                    }
+                                },
+                                { data: 'lot_no' },
+                                { data: 'order_quantity' },
+                                { 
+                                    data: 'shippedsofar',
+                                    render: function(data, type, row) {
+                                        return data || 0;
+                                    }
+                                },
+                                { 
+                                    data: null,
+                                    render: function(data, type, row) {
+                                        var remainingQty = Math.max(0, row.order_quantity - row.shippedsofar);
+                                        return '<input type="text" class="form-control this-time-ship-qty" style="min-width:80px;" value="' + remainingQty + '" readonly>';
+                                    }
+                                },
+                                {
+                                    data: 'shipped',
+                                    render: function(data, type, row) {
+                                        return '<input type="checkbox" class="adjust-checkbox" ' + (data == 1 ? 'checked' : '') + '>';
+                                    }
+                                }
+                            ]
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Failed to load adjustment data');
+                    }
+                });
+            }
+
+            // Save Data for Adjustment
+            $(document).on('click', '#saveAdjustmentData', function(e) {
+                e.preventDefault();
+                var selectedIds = [];
+                $('#adjustmentDataTable .row-checkbox:checked').each(function() {
+                    var tr = $(this).closest('tr');
+                    var id = $(this).data('id');
+                    var adjustChecked = tr.find('.adjust-checkbox').is(':checked');
+                    if (adjustChecked) {
+                        selectedIds.push(id);
+                    }
+                });
+
+                if (selectedIds.length === 0) {
+                    alert('Please select records and check Adjust to save.');
+                    return;
+                }
+
+                // Show loading indicator
+                var btn = $(this);
+                var originalText = btn.text();
+                btn.prop('disabled', true).text('Processing...');
+
+                $.ajax({
+                    url: 'adjust_orders.php',
+                    method: 'POST',
+                    dataType: 'json',
+                    data: { ids: selectedIds },
+                    success: function(response) {
+                        if (response.success) {
+                            alert('Orders adjusted successfully.');
+                            loadAdjustmentData();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', xhr.responseText);
+                        
+                        // Try to extract error message from response if possible
+                        try {
+                            var jsonResponse = JSON.parse(xhr.responseText);
+                            alert('Error saving adjustment: ' + jsonResponse.message);
+                        } catch (e) {
+                            // If response isn't valid JSON, show raw response up to 100 chars
+                            var errorText = xhr.responseText ? xhr.responseText.substring(0, 100) : error;
+                            alert('Error saving adjustment: ' + errorText + '...');
+                        }
+                    },
+                    complete: function() {
+                        // Restore button state
+                        btn.prop('disabled', false).text(originalText);
+                    }
+                });
+            });
+
+            // Reports Section
+            function loadNotPlannedReport() {
+                $.ajax({
+                    url: 'load_reports.php',
+                    type: 'GET',
+                    data: { report_type: 'not_planned' },
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#notPlannedTable').DataTable({
+                            destroy: true,
+                            data: data,
+                            columns: [
+                                { data: 'order_no' },
+                                { data: 'decal_patt' },
+                                { data: 'curve_no' },
+                                { data: 'order_quantity' },
+                                { data: 'order_date' },
+                                { data: 'delivery_date' }
+                            ]
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading Not Planned report:', error);
+                        alert('Failed to load Not Planned report');
+                    }
+                });
+            }
+
+            function loadPendingAckReport() {
+                $.ajax({
+                    url: 'load_reports.php',
+                    type: 'GET',
+                    data: { report_type: 'pending_ack' },
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#pendingAckTable').DataTable({
+                            destroy: true,
+                            data: data,
+                            columns: [
+                                { data: 'order_no' },
+                                { data: 'decal_patt' },
+                                { data: 'curve_no' },
+                                { data: 'order_quantity' },
+                                { data: 'order_date' },
+                                { data: 'delivery_date' }
+                            ]
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading Pending ACK report:', error);
+                        alert('Failed to load Pending Delivery ACK report');
+                    }
+                });
+            }
+
+            function loadToBeShippedReport() {
+                $.ajax({
+                    url: 'load_reports.php',
+                    type: 'GET',
+                    data: { report_type: 'to_be_shipped' },
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#toBeShippedTable').DataTable({
+                            destroy: true,
+                            data: data,
+                            columns: [
+                                { data: 'order_no' },
+                                { data: 'decal_patt' },
+                                { data: 'curve_no' },
+                                { data: 'order_quantity' },
+                                { data: 'order_date' },
+                                { data: 'planned_delivery' },
+                                { data: 'lot_no' },
+                                { data: 'shippedsofar' }
+                            ]
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading To Be Shipped report:', error);
+                        alert('Failed to load To Be Shipped report');
+                    }
+                });
+            }
+
+            // Load reports when tab is clicked
+            $('.list-group-item[data-section="reports"]').click(function() {
+                // Load all reports when reports section is opened
+                loadNotPlannedReport();
+                loadPendingAckReport();
+                loadToBeShippedReport();
+            });
+            
+            // Home Section
+            function loadHomeSummary() {
+                $.ajax({
+                    url: 'load_home_summary.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    cache: false,  // Prevent caching
+                    success: function(data) {
+                        console.log('Home Summary Data:', data);
+                        
+                        // Check if data is an object and has expected properties
+                        if (typeof data === 'object') {
+                            $('#not-planned-count').text(data.not_planned || 0);
+                            $('#pending-ack-count').text(data.pending_ack || 0);
+                            $('#to-be-shipped-count').text(data.to_be_shipped || 0);
+                            $('#total-orders-count').text(data.total_orders || 0);
+                        } else {
+                            console.error('Unexpected data format:', data);
+                            alert('Unexpected data format received');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading home summary:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
+                        
+                        // Display more detailed error information
+                        var errorMessage = 'Failed to load home summary.\n\n';
+                        errorMessage += 'Status: ' + status + '\n';
+                        errorMessage += 'Error: ' + error + '\n';
+                        errorMessage += 'Response: ' + xhr.responseText;
+                        
+                        alert(errorMessage);
+                    }
+                });
+            }
+
+            // Home summary loading
+            $(document).ready(function() {
+                // Initial load
+                loadHomeSummary();
+
+                // Load when home tab is clicked
+                $('.list-group-item[data-section="home"]').on('click', function() {
+                    loadHomeSummary();
+                });
+
+                // Fallback to ensure loading
+                if ($('#home-section').is(':visible')) {
+                    loadHomeSummary();
+                }
+
+                // Additional fallback with slight delay
+                setTimeout(function() {
+                    if ($('#not-planned-count').text() === '0') {
+                        loadHomeSummary();
+                    }
+                }, 500);
+            });
+
+            // REPLACE THIS (problematic handler):
+            // $(document).on('focus click change input', '.this-time-ship-qty', function() {
+            //     // Existing problematic code...
+            // });
+
+            // WITH THIS FIXED VERSION:
+            $(document).on('change blur', '.this-time-ship-qty', function() {
+                var input = $(this);
+                var value = parseInt(input.val()) || 0;
+                
+                // Only prevent negative values
+                if (value < 0) {
+                    input.val(0);
+                    return;
+                }
+                
+                var tr = $(this).closest('tr');
+                var id = tr.find('.row-checkbox').data('id');
+                
+                // Only proceed if we have a valid ID
+                if (!id) return;
+                
+                // Only update the selected rows object without restrictions
+                if (selectedShippedRows[id]) {
+                    selectedShippedRows[id].ship_qty = value;
+                }
+            });
+
+            // Remove any existing handlers first
+    $(document).off('click', '#saveDateChanges');
+    
+    // Then add our handler
+    $(document).on('click', '#saveDateChanges', function(e) {
+        // Prevent any default actions or bubbling
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Disable the button to prevent double-clicks
+        var $button = $(this);
+        $button.prop('disabled', true);
+        
+        // Clear any previous handlers by using .off() before registering new ones
+        $('#shippedDataTable .row-checkbox').off('change.dateUpdate');
+        
+        // Add visual indicator
+        $button.html('Saving...');
+        
+        // Collect selected records
+        var selectedRecords = [];
+        
+        $('#shippedDataTable .row-checkbox:checked').each(function() {
+            var checkbox = $(this);
+            var row = checkbox.closest('tr');
+            var id = checkbox.data('id');
+            var dateInput = row.find('.planned-delivery-input');
+            var date = dateInput.val();
+            
+            if (id && date) {
+                selectedRecords.push({
+                    id: id,
+                    date: date
+                });
+            }
+        });
+        
+        // Check if we have records to update
+        if (selectedRecords.length === 0) {
+            alert('Please select at least one row to update');
+            // Re-enable button
+            $button.prop('disabled', false);
+            $button.html('Save Date Changes');
+            return;
+        }
+        
+        // Use a timestamp to prevent caching
+        var timestamp = new Date().getTime();
+        
+        // Send update request
+        $.ajax({
+            url: 'update_dates.php?t=' + timestamp,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                records: JSON.stringify(selectedRecords)
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.updated + ' records updated successfully');
+                } else {
+                    alert('Error: ' + (response.message || 'Unknown error'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                alert('Server error: ' + status);
+            },
+            complete: function() {
+                // Re-enable button regardless of success/failure
+                $button.prop('disabled', false);
+                $button.html('Save Date Changes');
+            }
+        });
+    });
+        });
+    </script>
+</body>
+</html>
