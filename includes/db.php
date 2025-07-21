@@ -1,8 +1,8 @@
 <?php
 // Database connection configuration
-$servername = "10.0.0.20";
+$servername = "localhost";
 $username = "appserver";
-$password = "nlpl1234";
+$password = "app1234#23";
 $dbname = "nlpl";
 
 try {
